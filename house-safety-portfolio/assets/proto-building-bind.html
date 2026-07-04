@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>建筑信息关联绑定</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #2563eb;
+    --primary-light: #eff6ff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --green-bg: #f0fdf4;
+    --green-text: #15803d;
+    --green-border: #bbf7d0;
+    --yellow-bg: #fefce8;
+    --yellow-text: #a16207;
+    --yellow-border: #fde68a;
+    --red-bg: #fef2f2;
+    --red-text: #b91c1c;
+    --red-border: #fecaca;
+    --gray-bg: #f8fafc;
+    --gray-text: #94a3b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* 左侧边栏 */
+  .sidebar { width: 220px; background: #1e293b; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar-logo { padding: 24px 20px; font-size: 16px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); letter-spacing: 0.5px; }
+  .sidebar-logo span { font-size: 11px; color: #94a3b8; font-weight: 400; display: block; margin-top: 2px; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .nav-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; color: #94a3b8; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .nav-item.active { background: rgba(37,99,235,0.2); color: #93c5fd; border-left-color: #2563eb; }
+  .nav-item .icon { font-size: 18px; }
+  .nav-item .badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-footer .user { font-size: 13px; color: #94a3b8; }
+  .sidebar-footer .role { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  /* 主内容区 */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* 顶部 */
+  .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 16px; }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; }
+  .topbar-tabs { display: flex; gap: 4px; }
+  .topbar-tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+  .topbar-tab:hover { background: var(--bg); color: var(--text); }
+  .topbar-tab.active { background: var(--primary); color: #fff; }
+  .btn { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+  .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* 主体内容 */
+  .content { padding: 24px; overflow-y: auto; flex: 1; }
+
+  /* 统计卡片 */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border-radius: 10px; padding: 20px; border: 1px solid var(--border); }
+  .stat-card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: var(--text); }
+  .stat-card .value.red { color: #ef4444; }
+  .stat-card .value.orange { color: #f97316; }
+  .stat-card .value.green { color: #16a34a; }
+  .stat-card .value.blue { color: #2563eb; }
+  .stat-card .sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* 列表工具栏 */
+  .list-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .search-box { flex: 1; display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; gap: 8px; }
+  .search-box input { border: none; outline: none; padding: 10px 0; flex: 1; font-size: 13px; font-family: inherit; background: transparent; color: var(--text); }
+  .search-box input::placeholder { color: #94a3b8; }
+  .filter-chip { padding: 7px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); transition: all 0.15s; }
+  .filter-chip:hover, .filter-chip.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+  /* 建筑列表 */
+  .building-list { background: var(--card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+  .building-item { display: grid; grid-template-columns: 1fr 140px 180px 120px 100px 120px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.15s; }
+  .building-item:last-child { border-bottom: none; }
+  .building-item:hover { background: #f8fafc; }
+  .building-item.header { background: #f8fafc; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: default; }
+  .building-item.header:hover { background: #f8fafc; }
+  .bi-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+  .bi-addr { font-size: 12px; color: var(--text-muted); }
+  .bi-org { font-size: 12px; color: var(--text-muted); }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .tag-red { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .tag-orange { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .tag-yellow { background: #fefce8; color: #a16207; border: 1px solid #fde68a; }
+  .tag-green { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .tag-gray { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+  .tag-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .bi-time { font-size: 12px; color: var(--text-muted); }
+  .bi-score { font-size: 13px; font-weight: 700; font-family: "SF Mono", monospace; }
+  .bi-score.s90 { color: #16a34a; }
+  .bi-score.s70 { color: #f97316; }
+  .bi-score.s50 { color: #b91c1c; }
+  .bi-op { display: flex; gap: 8px; align-items: center; }
+  .link-btn { padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; border: 1px solid var(--primary); background: transparent; color: var(--primary); font-weight: 500; transition: all 0.15s; font-family: inherit; }
+  .link-btn:hover { background: var(--primary); color: #fff; }
+  .detail-btn { padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all 0.15s; font-family: inherit; }
+  .detail-btn:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* ======================== 绑定详情页 ======================== */
+  .detail-view { display: none; }
+
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .back-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-muted); transition: all 0.15s; }
+  .back-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .detail-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .detail-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* 信息卡片 */
+  .info-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .info-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .info-card-header .title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .info-card-header .title .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .info-card-header .title .dot.blue { background: #2563eb; }
+  .info-card-header .title .dot.green { background: #16a34a; }
+  .info-card-body { padding: 16px 20px; }
+  .field-row { display: flex; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { width: 110px; font-size: 12px; color: var(--text-muted); flex-shrink: 0; padding-top: 2px; }
+  .field-value { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
+
+  /* 匹配分析区 */
+  .match-section { margin-top: 20px; }
+  .match-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+  .match-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .match-card-header h3 { font-size: 15px; font-weight: 600; }
+  .score-display { display: flex; align-items: center; gap: 20px; }
+  .score-ring { position: relative; width: 80px; height: 80px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring circle { fill: none; stroke-width: 8; }
+  .score-ring .bg { stroke: #e2e8f0; }
+  .score-ring .fg { stroke: #f97316; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+  .score-ring .fg.high { stroke: #16a34a; }
+  .score-ring .fg.low { stroke: #ef4444; }
+  .score-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-text .num { font-size: 20px; font-weight: 800; color: var(--text); }
+  .score-text .den { font-size: 11px; color: var(--text-muted); }
+  .score-detail { display: flex; flex-direction: column; gap: 6px; }
+  .score-detail .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .score-detail .row .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .score-detail .row .label { color: var(--text-muted); flex: 1; }
+  .score-detail .row .val { font-weight: 600; color: var(--text); }
+
+  .match-actions { display: flex; gap: 12px; }
+  .btn-bind { padding: 10px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-bind.primary { background: var(--primary); color: #fff; }
+  .btn-bind.primary:hover { background: #1d4ed8; }
+  .btn-bind.primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-bind.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+  .btn-bind.secondary:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* 比对表格 */
+  .compare-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  .compare-table th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--text-muted); background: #f8fafc; border-bottom: 1px solid var(--border); }
+  .compare-table th:first-child { border-radius: 6px 0 0 0; }
+  .compare-table th:last-child { border-radius: 0 6px 0 0; }
+  .compare-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table .col-field { width: 130px; font-weight: 600; color: var(--text); }
+  .compare-table .col-org { color: var(--text); }
+  .compare-table .col-sys { color: var(--text); }
+  .compare-table .col-status { width: 80px; text-align: center; }
+  .compare-table .col-score { width: 70px; text-align: center; font-weight: 700; font-size: 12px; }
+
+  .status-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .status-tag.full { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .status-tag.partial { background: #fefce8; color: #a16207; border: 1px solid #fde68a; }
+  .status-tag.none { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .status-tag.na { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
+  .diff-highlight { background: #fffbeb; }
+  .diff-highlight td { background: #fffbeb; }
+  .no-diff td { background: #f0fdf4; }
+
+  /* 推荐档案 */
+  .recommend-section { margin-top: 20px; }
+  .recommend-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .recommend-list { display: flex; flex-direction: column; gap: 10px; }
+  .recommend-item { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.15s; }
+  .recommend-item:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(37,99,235,0.08); }
+  .recommend-item.selected { border-color: var(--primary); background: var(--primary-light); }
+  .recommend-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .recommend-rank.r1 { background: #f0fdf4; color: #15803d; border: 2px solid #bbf7d0; }
+  .recommend-rank.r2 { background: #fff7ed; color: #c2410c; border: 2px solid #fed7aa; }
+  .recommend-rank.r3 { background: #f8fafc; color: #64748b; border: 2px solid #e2e8f0; }
+  .recommend-info { flex: 1; }
+  .recommend-info .name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .recommend-info .meta { font-size: 12px; color: var(--text-muted); }
+  .recommend-score { font-size: 20px; font-weight: 800; color: var(--text); }
+  .recommend-score .unit { font-size: 11px; font-weight: 400; color: var(--text-muted); }
+
+  /* 绑定弹窗 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal { background: var(--card); border-radius: 14px; width: 480px; max-width: 90vw; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
+  .modal-close { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-size: 18px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: #f1f5f9; }
+  .modal-body { padding: 24px; }
+  .modal-body .confirm-info { background: #f8fafc; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; }
+  .modal-body .confirm-info .row { display: flex; gap: 12px; margin-bottom: 6px; }
+  .modal-body .confirm-info .row:last-child { margin-bottom: 0; }
+  .modal-body .confirm-info .key { color: var(--text-muted); width: 70px; flex-shrink: 0; }
+  .modal-body .confirm-info .val { color: var(--text); font-weight: 500; }
+  .modal-tip { font-size: 12px; color: var(--text-muted); margin-top: 12px; padding: 10px 12px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #fde68a; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* 绑定成功提示 */
+  .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-80px); background: #16a34a; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 2000; transition: transform 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(22,163,74,0.3); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ========== 历史绑定记录（信息比对样式） ========== */
+  .history-modal-wrap { background: #fff; border-radius: 0 0 12px 12px; width: 720px; max-width: 96vw; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); border-top: 4px solid #1890ff; }
+  .history-modal-header { padding: 16px 20px; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .history-modal-header h2 { font-size: 16px; font-weight: 600; color: #262626; }
+  .history-modal-close { width: 32px; height: 32px; border: none; background: transparent; cursor: pointer; font-size: 20px; color: #8c8c8c; line-height: 1; border-radius: 4px; }
+  .history-modal-close:hover { background: #f5f5f5; color: #262626; }
+  .history-modal-body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; }
+  .history-meta-bar { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #595959; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px; }
+  .history-meta-bar strong { color: #262626; font-weight: 600; }
+  .history-record-list { margin-bottom: 16px; }
+  .history-record-list .list-title { font-size: 13px; font-weight: 600; color: #262626; margin-bottom: 8px; }
+  .history-record-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #e8e8e8; border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .history-record-item:hover { border-color: #91caff; background: #e6f4ff; }
+  .history-record-item.active { border-color: #1890ff; background: #e6f4ff; box-shadow: 0 0 0 1px #1890ff; }
+  .history-record-item .time { font-size: 13px; font-weight: 600; color: #262626; min-width: 140px; }
+  .history-record-item .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .history-record-item .list-name { font-size: 13px; font-weight: 600; color: #262626; }
+  .history-record-item .pct-col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 140px; flex-shrink: 0; }
+  .history-record-item .match-at-time { font-size: 12px; color: #595959; text-align: right; line-height: 1.4; }
+  .history-record-item .match-at-time .mat-lbl { color: #8c8c8c; margin-right: 2px; }
+  .history-record-item .match-at-time .pct { font-size: 14px; font-weight: 700; color: #1890ff; }
+  .history-record-item .building-code-row { font-size: 11px; color: #595959; text-align: right; line-height: 1.3; max-width: 140px; word-break: break-all; }
+  .history-record-item .building-code-row .bc-lbl { color: #8c8c8c; margin-right: 4px; }
+  .history-record-item .status-tag-h { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .history-record-item .status-tag-h.valid { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+  .history-record-item .status-tag-h.revoked { background: #fff2f0; color: #cf1322; border: 1px solid #ffccc7; }
+  .history-compare-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #d9d9d9; }
+  .history-compare-table thead th { background: #f5f5f5; color: #262626; font-weight: 600; padding: 10px 12px; text-align: left; border: 1px solid #d9d9d9; }
+  .history-compare-table tbody td { padding: 10px 12px; border: 1px solid #e8e8e8; color: #262626; vertical-align: top; }
+  .history-compare-table tbody tr:nth-child(even) td { background: #fafafa; }
+  .history-compare-table .col-score { width: 88px; text-align: center; font-weight: 700; color: #1890ff; }
+  .history-section-title { font-size: 13px; font-weight: 600; color: #262626; margin: 4px 0 10px; padding-left: 8px; border-left: 3px solid #1890ff; }
+  /* ========== 移动端适配 ========== */
+  @media screen and (max-width: 768px) {
+    .layout { flex-direction: column; min-height: auto; }
+    .sidebar { display: none; width: 100%; position: fixed; top: 0; left: 0; height: 100vh; z-index: 999; background: rgba(30,41,59,0.98); }
+    .sidebar.show { display: flex; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998; }
+    .sidebar-overlay.show { display: block; }
+    .mobile-header { display: flex; align-items: center; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border); gap: 12px; }
+    .menu-toggle { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--text); flex-shrink: 0; }
+    .mobile-title { font-size: 16px; font-weight: 600; flex: 1; }
+
+    .main { min-height: auto; }
+    .topbar { padding: 0 16px; height: auto; min-height: 56px; flex-wrap: wrap; padding: 12px 16px; }
+    .topbar-title { display: none; }
+    .topbar-tabs { order: 3; width: 100%; }
+    .topbar-tabs .topbar-tab { flex: 1; text-align: center; padding: 8px; font-size: 13px; }
+    .btn { padding: 8px 12px; font-size: 12px; }
+    .btn span { display: none; }
+
+    .content { padding: 16px; }
+
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-card { padding: 14px; }
+    .stat-card .value { font-size: 22px; }
+
+    .list-toolbar { flex-wrap: wrap; gap: 8px; }
+    .search-box { min-width: 100%; }
+    .filter-chip { padding: 6px 10px; font-size: 11px; }
+
+    .building-list { overflow-x: auto; }
+    .building-item { grid-template-columns: 1fr 80px 90px 70px; min-width: 600px; padding: 12px 14px; }
+    .bi-org { display: none; }
+    .bi-score { font-size: 12px; }
+    .link-btn, .detail-btn { padding: 4px 8px; font-size: 11px; }
+
+    .detail-view { padding-bottom: 80px; }
+    .detail-header { flex-wrap: wrap; gap: 12px; }
+    .detail-title { font-size: 16px; }
+    .detail-subtitle { font-size: 12px; }
+    .detail-header > div:last-child { width: 100%; margin-left: 0; flex-wrap: wrap; gap: 8px; }
+    .tag { font-size: 11px; padding: 2px 8px; }
+
+    .detail-grid { grid-template-columns: 1fr; gap: 16px; }
+    .field-row { flex-direction: column; gap: 4px; }
+    .field-label { width: auto; }
+
+    .match-section { margin-top: 16px; }
+    .match-card { padding: 16px; }
+    .match-card-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .score-display { flex-wrap: wrap; width: 100%; }
+    .score-detail { width: 100%; }
+
+    .compare-table { font-size: 12px; display: block; overflow-x: auto; }
+    .compare-table th, .compare-table td { padding: 8px 6px; }
+
+    .recommend-section { margin-top: 16px; }
+    .recommend-item { flex-wrap: wrap; padding: 12px; }
+    .recommend-score { font-size: 16px; width: 100%; text-align: right; margin-top: 8px; }
+
+    .modal { width: 95vw; max-height: 85vh; }
+    .modal-header { padding: 16px; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; flex-wrap: wrap; }
+    .modal-footer .btn { flex: 1; justify-content: center; }
+
+    .history-modal-wrap { width: 95vw; max-width: 95vw; border-radius: 12px; }
+    .history-modal-header { padding: 14px 16px; }
+    .history-modal-body { padding: 14px 16px 16px; }
+    .history-meta-bar { grid-template-columns: 1fr; gap: 6px; font-size: 12px; }
+
+    .toast { left: 16px; right: 16px; transform: translateX(0) translateY(-80px); width: auto; }
+    .toast.show { transform: translateX(0) translateY(0); }
+  }
+
+  /* 默认隐藏移动端头部 */
+  .mobile-header { display: none; }
+  .sidebar-overlay { display: none; }
+</style>
+</head>
+<body>
+
+<!-- 移动端遮罩层 -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+<!-- 移动端头部 -->
+<div class="mobile-header">
+  <button class="menu-toggle" onclick="toggleMobileMenu()">☰</button>
+  <div class="mobile-title">建筑关联绑定</div>
+</div>
+
+<div class="layout">
+  <!-- 左侧边栏 -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      房屋安全管理平台
+      <span>Building Safety Management</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">🏠</span> 建筑信息管理</div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">📋</span> 鉴定业务</div>
+      <div class="nav-item active" onclick="switchNav(this)"><span class="icon">🔗</span> 建筑关联绑定<span class="badge">5</span></div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">📄</span> 备案记录</div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">🔍</span> 档案查询</div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">📊</span> 数据统计</div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">🗺️</span> 地图管理</div>
+      <div class="nav-item" onclick="switchNav(this)"><span class="icon">⚙️</span> 系统设置</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user">陈XX</div>
+      <div class="role">岳麓区住建局 · 区县级</div>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main">
+    <!-- 顶部 -->
+    <div class="topbar">
+      <div class="topbar-title">建筑关联绑定</div>
+      <div class="topbar-tabs">
+        <div class="topbar-tab active" onclick="switchTab(this, 'unlinked')">待关联 <span style="background:#ef4444;color:#fff;padding:1px 6px;border-radius:10px;font-size:11px;margin-left:4px;">5</span></div>
+        <div class="topbar-tab" onclick="switchTab(this, 'linked')">已关联 <span style="background:#16a34a;color:#fff;padding:1px 6px;border-radius:10px;font-size:11px;margin-left:4px;">12</span></div>
+      </div>
+      <button class="btn btn-primary">📤 批量导入</button>
+      <button class="btn btn-outline">📥 导出</button>
+    </div>
+
+    <!-- 列表页 -->
+    <div class="content" id="listPage">
+      <!-- 统计 -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="label">待关联建筑</div>
+          <div class="value red">5</div>
+          <div class="sub">本周新增 3 条</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">已关联建筑</div>
+          <div class="value green">12</div>
+          <div class="sub">本月累计 28 条</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">高匹配度待确认</div>
+          <div class="value orange">2</div>
+          <div class="sub">≥ 80 分，优先处理</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">超时未关联</div>
+          <div class="value blue">1</div>
+          <div class="sub">超过 30 天</div>
+        </div>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="list-toolbar">
+        <div class="search-box">
+          🔍
+          <input type="text" placeholder="搜索项目名称、地址、建筑所有人、鉴定机构…">
+        </div>
+        <div class="filter-chip active">全部</div>
+        <div class="filter-chip">高匹配度</div>
+        <div class="filter-chip">超时预警</div>
+        <div class="filter-chip">本人绑定</div>
+      </div>
+
+      <!-- 列表 -->
+      <div class="building-list">
+        <div class="building-item header">
+          <div>建筑信息</div>
+          <div>行政区划</div>
+          <div>鉴定机构</div>
+          <div>匹配度</div>
+          <div>提交时间</div>
+          <div>操作</div>
+        </div>
+
+        <div class="building-item" onclick="openDetail()">
+          <div>
+            <div class="bi-title">麓谷雅苑住宅项目 · 1栋101</div>
+            <div class="bi-addr">岳麓区桔子洲街道岳麓大道128号</div>
+          </div>
+          <div><span class="tag tag-blue">岳麓区</span></div>
+          <div class="bi-org">湖南省建筑设计院</div>
+          <div class="bi-score s90">92分</div>
+          <div class="bi-time">2025-07-10<br>2天前</div>
+          <div class="bi-op">
+            <button class="link-btn" onclick="event.stopPropagation();openDetail()">绑定</button>
+            <button class="detail-btn">详情</button>
+          </div>
+        </div>
+
+        <div class="building-item" onclick="openDetail()">
+          <div>
+            <div class="bi-title">梅溪湖国际新城二期 · A3栋</div>
+            <div class="bi-addr">岳麓区梅溪湖街道环湖路1099号</div>
+          </div>
+          <div><span class="tag tag-blue">岳麓区</span></div>
+          <div class="bi-org">长沙市建设检测中心</div>
+          <div class="bi-score s70">76分</div>
+          <div class="bi-time">2025-07-08<br>4天前</div>
+          <div class="bi-op">
+            <button class="link-btn" onclick="event.stopPropagation();openDetail()">绑定</button>
+            <button class="detail-btn">详情</button>
+          </div>
+        </div>
+
+        <div class="building-item" onclick="openDetail()">
+          <div>
+            <div class="bi-title">望城坡旧城改造项目 · 5栋</div>
+            <div class="bi-addr">岳麓区望城坡街道玉兰路288号</div>
+          </div>
+          <div><span class="tag tag-blue">岳麓区</span></div>
+          <div class="bi-org">湖南省建筑设计院</div>
+          <div class="bi-score s70">65分</div>
+          <div class="bi-time">2025-06-28<br>14天前</div>
+          <div class="bi-op">
+            <button class="link-btn" onclick="event.stopPropagation();openDetail()">绑定</button>
+            <button class="detail-btn">详情</button>
+          </div>
+        </div>
+
+        <div class="building-item" onclick="openDetail()">
+          <div>
+            <div class="bi-title">银盆岭小区危房加固项目 · 7栋</div>
+            <div class="bi-addr">岳麓区银盆岭街道银双路58号</div>
+          </div>
+          <div><span class="tag tag-blue">岳麓区</span></div>
+          <div class="bi-org">岳麓区房屋安全鉴定中心</div>
+          <div class="bi-score s50">43分</div>
+          <div class="bi-time">2025-06-15<br>27天前</div>
+          <div class="bi-op">
+            <button class="link-btn" onclick="event.stopPropagation();openDetail()">绑定</button>
+            <button class="detail-btn">详情</button>
+          </div>
+        </div>
+
+        <div class="building-item" onclick="openDetail()">
+          <div>
+            <div class="bi-title">洋湖垸湿地公园配套楼 · 综合楼</div>
+            <div class="bi-addr">岳麓区洋湖街道潇湘南路一段599号</div>
+          </div>
+          <div><span class="tag tag-blue">岳麓区</span></div>
+          <div class="bi-org">湖南省建筑设计院</div>
+          <div class="bi-score s50">38分</div>
+          <div class="bi-time">2025-06-10<br>32天前</div>
+          <div class="bi-op">
+            <button class="link-btn" onclick="event.stopPropagation();openDetail()">绑定</button>
+            <button class="detail-btn">详情</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 详情页（绑定对比页） -->
+    <div class="content detail-view" id="detailPage">
+      <div class="detail-header">
+        <button class="back-btn" onclick="closeDetail()">←</button>
+        <div>
+          <div class="detail-title">建筑关联绑定</div>
+          <div class="detail-subtitle">麓谷雅苑住宅项目 · 1栋101 · 湖南省建筑设计院提交</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+          <span class="tag tag-green" style="font-size:13px;padding:4px 14px;">匹配度 92/100</span>
+          <button class="btn btn-outline" onclick="openHistoryModal()">📜 历史绑定记录</button>
+          <button class="btn btn-outline">📄 查看鉴定报告</button>
+          <button class="btn btn-primary" onclick="openModal()">确认绑定</button>
+        </div>
+      </div>
+
+      <!-- 双卡片 -->
+      <div class="detail-grid">
+        <!-- 机构填写 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="title"><span class="dot blue"></span>机构填写建筑信息</div>
+            <span class="tag tag-blue">机构侧</span>
+          </div>
+          <div class="info-card-body">
+            <div class="field-row"><div class="field-label">项目名称</div><div class="field-value">麓谷雅苑住宅项目</div></div>
+            <div class="field-row"><div class="field-label">行政区划</div><div class="field-value">湖南省长沙市岳麓区</div></div>
+            <div class="field-row"><div class="field-label">房屋坐落</div><div class="field-value">桔子洲街道岳麓大道128号</div></div>
+            <div class="field-row"><div class="field-label">栋号/房号</div><div class="field-value">1栋101室</div></div>
+            <div class="field-row"><div class="field-label">建筑所有人</div><div class="field-value">张三</div></div>
+            <div class="field-row"><div class="field-label">使用人</div><div class="field-value">李四（承租）</div></div>
+            <div class="field-row"><div class="field-label">建筑面积</div><div class="field-value">1200.00 ㎡</div></div>
+            <div class="field-row">
+              <div class="field-label">层数</div>
+              <div class="field-value">地上 12 层 / 地下 2 层</div>
+            </div>
+            <div class="field-row"><div class="field-label">结构类型</div><div class="field-value">框架结构</div></div>
+            <div class="field-row"><div class="field-label">建筑用途</div><div class="field-value">住宅</div></div>
+            <div class="field-row"><div class="field-label">土地性质</div><div class="field-value">出让</div></div>
+            <div class="field-row"><div class="field-label">竣工时间</div><div class="field-value">2015年</div></div>
+            <div class="field-row"><div class="field-label">鉴定业务类型</div><div class="field-value">结构安全性鉴定（必检）</div></div>
+            <div class="field-row"><div class="field-label">联系人</div><div class="field-value">王五 · 138xxxx1234</div></div>
+            <div class="field-row"><div class="field-label">提交时间</div><div class="field-value">2025-07-10 14:23</div></div>
+            <div class="field-row"><div class="field-label">房屋位置</div>
+              <div class="field-value">
+                <div style="height:80px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">📍 地图坐标点（已标注）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 系统档案 -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="title"><span class="dot green"></span>系统档案建筑信息</div>
+            <span class="tag tag-green">档案侧</span>
+          </div>
+          <div class="info-card-body">
+            <div class="field-row"><div class="field-label">系统建筑编号</div><div class="field-value">CS-BLDG-2023-00421</div></div>
+            <div class="field-row"><div class="field-label">图斑编号</div><div class="field-value">YLS-2023-TB-00892</div></div>
+            <div class="field-row"><div class="field-label">行政区划</div><div class="field-value">湖南省长沙市岳麓区</div></div>
+            <div class="field-row"><div class="field-label">档案地址</div><div class="field-value">岳麓大道128号（组/路/号）</div></div>
+            <div class="field-row"><div class="field-label">栋号/房号</div><div class="field-value">1栋101室</div></div>
+            <div class="field-row"><div class="field-label">产权主体名称</div><div class="field-value">张三</div></div>
+            <div class="field-row"><div class="field-label">使用人</div><div class="field-value" style="color:#94a3b8;">（未登记）</div></div>
+            <div class="field-row"><div class="field-label">建筑面积</div><div class="field-value">1180.00 ㎡</div></div>
+            <div class="field-row">
+              <div class="field-label">层数</div>
+              <div class="field-value" style="color:#b91c1c;">地上 12 层 / 地下 1 层 <span style="font-size:11px;color:#b91c1c;background:#fef2f2;padding:1px 6px;border-radius:4px;margin-left:6px;">⚠ 差异</span></div>
+            </div>
+            <div class="field-row"><div class="field-label">结构类型</div><div class="field-value">框架结构</div></div>
+            <div class="field-row"><div class="field-label">建筑用途</div><div class="field-value">居住 <span style="font-size:11px;color:#64748b;background:#f8fafc;padding:1px 6px;border-radius:4px;margin-left:6px;">码表映射：住宅→居住</span></div></div>
+            <div class="field-row"><div class="field-label">土地性质</div><div class="field-value">国有出让 <span style="font-size:11px;color:#64748b;background:#f8fafc;padding:1px 6px;border-radius:4px;margin-left:6px;">码表映射：出让→国有出让</span></div></div>
+            <div class="field-row"><div class="field-label">建造年代</div><div class="field-value">2015年</div></div>
+            <div class="field-row"><div class="field-label">数据来源</div><div class="field-value">长沙市城镇房屋普查系统</div></div>
+            <div class="field-row"><div class="field-label">最近更新</div><div class="field-value">2024-03-15</div></div>
+            <div class="field-row"><div class="field-label">图斑位置</div>
+              <div class="field-value">
+                <div style="height:80px;background:#e2e8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">🗺️ 图斑面（Polygon）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 匹配分析 -->
+      <div class="match-section">
+        <div class="match-card">
+          <div class="match-card-header">
+            <h3>📊 匹配度计算明细</h3>
+            <div class="score-display">
+              <div class="score-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle class="bg" cx="40" cy="40" r="32"/>
+                  <circle class="fg high" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="16"/>
+                </svg>
+                <div class="score-text">
+                  <span class="num">92</span>
+                  <span class="den">/100</span>
+                </div>
+              </div>
+              <div class="score-detail">
+                <div class="row"><span class="dot" style="background:#bbf7d0"></span><span class="label">完全一致</span><span class="val">8 项 · 78分</span></div>
+                <div class="row"><span class="dot" style="background:#fde68a"></span><span class="label">部分匹配</span><span class="val">2 项 · 14分</span></div>
+                <div class="row"><span class="dot" style="background:#fecaca"></span><span class="label">不匹配</span><span class="val">1 项 · 0分</span></div>
+                <div class="row"><span class="dot" style="background:#e2e8f0"></span><span class="label">不适用</span><span class="val">0 项</span></div>
+              </div>
+              <div style="font-size:12px;color:#64748b;max-width:180px;line-height:1.5;">匹配度 ≥80分，可直接确认绑定（仍需人工核对关键差异项）</div>
+            </div>
+          </div>
+
+          <!-- 比对表格 -->
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>比对字段</th>
+                <th>机构填写值</th>
+                <th>系统档案值</th>
+                <th>状态</th>
+                <th>得分</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="no-diff">
+                <td class="col-field">行政区划</td>
+                <td class="col-org">湖南省长沙市岳麓区</td>
+                <td class="col-sys">湖南省长沙市岳麓区</td>
+                <td class="col-status"><span class="status-tag full">✓ 满分</span></td>
+                <td class="col-score" style="color:#15803d;">5/5</td>
+              </tr>
+              <tr class="no-diff">
+                <td class="col-field">房屋位置</td>
+                <td class="col-org">[坐标点]</td>
+                <td class="col-sys">[图斑面 YLS-2023-TB-00892]</td>
+                <td class="col-status"><span class="status-tag full">✓ 落点在图斑内</span></td>
+                <td class="col-score" style="color:#15803d;">5/5</td>
+              </tr>
+              <tr class="no-diff">
+                <td class="col-field">产权人/使用人</td>
+                <td class="col-org">张三（所有权人）</td>
+                <td class="col-sys">张三</td>
+                <td class="col-status"><span class="status-tag full">✓ 完全一致</span></td>
+                <td class="col-score" style="color:#15803d;">20/20</td>
+              </tr>
+              <tr class="no-diff">
+                <td class="col-field">结构类型</td>
+                <td class="col-org">框架结构</td>
+                <td class="col-sys">框架结构</td>
+                <td class="col-status"><span class="status-tag full">✓ 满分</span></td>
+                <td class="col-score" style="color:#15803d;">10/10</td>
+              </tr>
+              <tr class="no-diff">
+                <td class="col-field">竣工时间</td>
+                <td class="col-org">2015年</td>
+                <td class="col-sys">2015年</td>
+                <td class="col-status"><span class="status-tag full">✓ 满分</span></td>
+                <td class="col-score" style="color:#15803d;">10/10</td>
+              </tr>
+              <tr class="diff-highlight">
+                <td class="col-field">建筑面积(㎡)</td>
+                <td class="col-org">1200.00 ㎡</td>
+                <td class="col-sys">1180.00 ㎡</td>
+                <td class="col-status"><span class="status-tag partial">~ 部分</span></td>
+                <td class="col-score" style="color:#a16207;">10/15</td>
+              </tr>
+              <tr class="diff-highlight">
+                <td class="col-field">房屋地址</td>
+                <td class="col-org">桔子洲街道岳麓大道128号</td>
+                <td class="col-sys">岳麓大道128号</td>
+                <td class="col-status"><span class="status-tag partial">~ 街道前缀差异</span></td>
+                <td class="col-score" style="color:#a16207;">12/15</td>
+              </tr>
+              <tr class="diff-highlight">
+                <td class="col-field">地下层数</td>
+                <td class="col-org">2 层</td>
+                <td class="col-sys">1 层</td>
+                <td class="col-status"><span class="status-tag none">✗ 不匹配</span></td>
+                <td class="col-score" style="color:#b91c1c;">0/5</td>
+              </tr>
+              <tr>
+                <td class="col-field">土地性质</td>
+                <td class="col-org">出让</td>
+                <td class="col-sys">国有出让 <span style="font-size:11px;color:#64748b;">（码表映射后一致）</span></td>
+                <td class="col-status"><span class="status-tag full">✓ 码表映射后一致</span></td>
+                <td class="col-score" style="color:#15803d;">5/5</td>
+              </tr>
+              <tr>
+                <td class="col-field">地上层数</td>
+                <td class="col-org">12 层</td>
+                <td class="col-sys">12 层</td>
+                <td class="col-status"><span class="status-tag full">✓ 满分</span></td>
+                <td class="col-score" style="color:#15803d;">5/5</td>
+              </tr>
+              <tr>
+                <td class="col-field">房屋用途</td>
+                <td class="col-org">住宅 <span style="font-size:11px;color:#64748b;">（码表映射后一致）</span></td>
+                <td class="col-sys">居住</td>
+                <td class="col-status"><span class="status-tag full">✓ 码表映射后一致</span></td>
+                <td class="col-score" style="color:#15803d;">5/5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 推荐档案 -->
+      <div class="recommend-section">
+        <h3>🏆 推荐绑定档案 <span style="font-size:12px;font-weight:400;color:#94a3b8;">（按匹配度排序）</span></h3>
+        <div class="recommend-list">
+          <div class="recommend-item selected" onclick="selectRecommend(this)">
+            <div class="recommend-rank r1">①</div>
+            <div class="recommend-info">
+              <div class="name">YLS-2023-TB-00892 · 岳麓大道128号 · 1栋101室</div>
+              <div class="meta">系统编号：CS-BLDG-2023-00421 · 图斑编号：YLS-2023-TB-00892 · 面积 1180㎡</div>
+            </div>
+            <div class="recommend-score">92<span class="unit">分</span></div>
+          </div>
+          <div class="recommend-item" onclick="selectRecommend(this)">
+            <div class="recommend-rank r2">②</div>
+            <div class="recommend-info">
+              <div class="name">YLS-2023-TB-00901 · 岳麓大道132号 · 2栋202室</div>
+              <div class="meta">系统编号：CS-BLDG-2023-00428 · 图斑编号：YLS-2023-TB-00901 · 面积 1150㎡</div>
+            </div>
+            <div class="recommend-score">65<span class="unit">分</span></div>
+          </div>
+          <div class="recommend-item" onclick="selectRecommend(this)">
+            <div class="recommend-rank r3">③</div>
+            <div class="recommend-info">
+              <div class="name">YLS-2023-TB-00780 · 银盆南路28号 · 麓山雅居1栋</div>
+              <div class="meta">系统编号：CS-BLDG-2023-00391 · 图斑编号：YLS-2023-TB-00780 · 面积 2100㎡</div>
+            </div>
+            <div class="recommend-score">41<span class="unit">分</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:12px;">
+        <button class="btn-bind secondary" onclick="closeDetail()">取消</button>
+        <button class="btn-bind primary" onclick="doBind()">确认绑定到此档案</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 绑定确认弹窗 -->
+<div class="modal-overlay" id="bindModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚠️ 确认绑定关联</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-info">
+        <div class="row"><span class="key">机构项目</span><span class="val">麓谷雅苑住宅项目 · 1栋101</span></div>
+        <div class="row"><span class="key">目标档案</span><span class="val">CS-BLDG-2023-00421 · 岳麓大道128号</span></div>
+        <div class="row"><span class="key">匹配度</span><span class="val" style="color:#15803d;">92 / 100 分</span></div>
+        <div class="row"><span class="key">绑定人</span><span class="val">陈XX（岳麓区住建局）</span></div>
+        <div class="row"><span class="key">绑定时间</span><span class="val">2025-07-12 10:30</span></div>
+      </div>
+      <div class="modal-tip">
+        💡 提示：绑定操作不可逆。绑定后系统将自动同步鉴定报告至该档案，同时解除该建筑在机构侧的待关联状态。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-bind secondary" onclick="closeModal()">取消</button>
+      <button class="btn-bind primary" onclick="confirmBind()">确认绑定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 历史绑定记录弹窗 -->
+<div class="modal-overlay" id="historyModal" style="align-items: center; justify-content: center;">
+  <div class="history-modal-wrap">
+    <div class="history-modal-header">
+      <h2>历史绑定记录</h2>
+      <button type="button" class="history-modal-close" onclick="closeHistoryModal()" aria-label="关闭">×</button>
+    </div>
+    <div class="history-modal-body">
+      <div class="history-record-list">
+        <div class="list-title">选择一条记录查看当时「信息比对」明细（绑定快照）</div>
+        <div id="historyRecordList"></div>
+      </div>
+
+      <div class="history-section-title" id="historyCompareTitle">信息比对（绑定快照 · 2025-06-18 09:42）</div>
+      <div class="history-meta-bar" id="historyMetaBar">
+        <div><strong>绑定人</strong>　陈XX</div>
+        <div><strong>关联建筑代码</strong>　CS-BLDG-2023-00421</div>
+        <div><strong>所得分数 / 总分数</strong>　80 / 100</div>
+      </div>
+
+      <table class="history-compare-table" id="historyCompareTable">
+        <thead>
+          <tr>
+            <th>鉴定机构备案时手动填写信息</th>
+            <th>档案库中建筑信息</th>
+            <th class="col-score">匹配得分</th>
+          </tr>
+        </thead>
+        <tbody id="historyCompareTbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✅ 绑定成功！建筑已关联至档案 CS-BLDG-2023-00421</div>
+
+<script>
+  var HISTORY_SNAPSHOTS = [
+    {
+      title: '2025-06-18 09:42',
+      pct: 80,
+      got: 80,
+      total: 100,
+      listName: '陈XX',
+      status: 'valid',
+      buildingCode: 'CS-BLDG-2023-00421',
+      note: '人工确认后绑定',
+      rows: [
+        { a: '行政区划', b: '行政区划', s: 5 },
+        { a: '房屋位置', b: '建筑图斑', s: 5 },
+        { a: '房屋地址', b: '组、路/街/巷、号', s: 12 },
+        { a: '产权人/使用人', b: '产权主体名称', s: 20 },
+        { a: '建筑面积', b: '建筑面积', s: 10 },
+        { a: '地上层数', b: '地上层数', s: 5 },
+        { a: '地下层数', b: '地下层数', s: 0 },
+        { a: '结构类型', b: '结构类型', s: 10 },
+        { a: '竣工时间', b: '建造年代/建造年份/建造日期', s: 8 },
+        { a: '土地性质', b: '土地性质', s: 5 },
+        { a: '房屋用途', b: '建筑用途', s: 0 }
+      ]
+    },
+    {
+      title: '2025-05-22 16:08',
+      pct: 72,
+      got: 72,
+      total: 100,
+      listName: '李XX',
+      status: 'revoked',
+      buildingCode: 'CS-BLDG-2023-00988',
+      note: '后由管理员解绑',
+      rows: [
+        { a: '行政区划', b: '行政区划', s: 5 },
+        { a: '房屋位置', b: '建筑图斑', s: 3 },
+        { a: '房屋地址', b: '组、路/街/巷、号', s: 10 },
+        { a: '产权人/使用人', b: '产权主体名称', s: 18 },
+        { a: '建筑面积', b: '建筑面积', s: 8 },
+        { a: '地上层数', b: '地上层数', s: 5 },
+        { a: '地下层数', b: '地下层数', s: 5 },
+        { a: '结构类型', b: '结构类型', s: 10 },
+        { a: '竣工时间', b: '建造年代/建造年份/建造日期', s: 6 },
+        { a: '土地性质', b: '土地性质', s: 2 },
+        { a: '房屋用途', b: '建筑用途', s: 0 }
+      ]
+    },
+    {
+      title: '2025-04-03 11:20',
+      pct: 65,
+      got: 65,
+      total: 100,
+      listName: '王XX',
+      status: 'revoked',
+      buildingCode: 'CS-BLDG-2022-03102',
+      note: '误绑，已纠正并解绑',
+      rows: [
+        { a: '行政区划', b: '行政区划', s: 5 },
+        { a: '房屋位置', b: '建筑图斑', s: 0 },
+        { a: '房屋地址', b: '组、路/街/巷、号', s: 8 },
+        { a: '产权人/使用人', b: '产权主体名称', s: 12 },
+        { a: '建筑面积', b: '建筑面积', s: 10 },
+        { a: '地上层数', b: '地上层数', s: 5 },
+        { a: '地下层数', b: '地下层数', s: 5 },
+        { a: '结构类型', b: '结构类型', s: 10 },
+        { a: '竣工时间', b: '建造年代/建造年份/建造日期', s: 5 },
+        { a: '土地性质', b: '土地性质', s: 5 },
+        { a: '房屋用途', b: '建筑用途', s: 0 }
+      ]
+    }
+  ];
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderHistoryRecordList(activeIndex) {
+    var container = document.getElementById('historyRecordList');
+    container.innerHTML = HISTORY_SNAPSHOTS.map(function (d, i) {
+      var active = i === activeIndex ? ' active' : '';
+      var tagClass = d.status === 'valid' ? 'valid' : 'revoked';
+      var tagText = d.status === 'valid' ? '当前有效' : '已解绑';
+      return (
+        '<div class="history-record-item' + active + '" data-history="' + i + '" onclick="selectHistoryRecord(this, ' + i + ')">' +
+        '<span class="time">' + escapeHtml(d.title) + '</span>' +
+        '<span class="meta"><span class="list-name">' + escapeHtml(d.listName) + '</span></span>' +
+        '<span class="status-tag-h ' + tagClass + '">' + tagText + '</span>' +
+        '<div class="pct-col">' +
+        '<div class="match-at-time"><span class="mat-lbl">当时匹配度：</span><span class="pct">' + d.pct + '%</span></div>' +
+        '<div class="building-code-row"><span class="bc-lbl">关联建筑代码</span>' + escapeHtml(d.buildingCode) + '</div>' +
+        '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderHistoryCompare(index) {
+    var d = HISTORY_SNAPSHOTS[index];
+    if (!d) return;
+    document.getElementById('historyCompareTitle').textContent = '信息比对（绑定快照 · ' + d.title + '）';
+    document.getElementById('historyMetaBar').innerHTML =
+      '<div><strong>绑定人</strong>　' + escapeHtml(d.listName) + '</div>' +
+      '<div><strong>关联建筑代码</strong>　' + escapeHtml(d.buildingCode) + '</div>' +
+      '<div><strong>所得分数 / 总分数</strong>　' + d.got + ' / ' + d.total + '</div>';
+    var tbody = document.getElementById('historyCompareTbody');
+    tbody.innerHTML = d.rows.map(function (r) {
+      return '<tr><td>' + escapeHtml(r.a) + '</td><td>' + escapeHtml(r.b) + '</td><td class="col-score">' + r.s + '</td></tr>';
+    }).join('');
+  }
+
+  function openHistoryModal() {
+    document.getElementById('historyModal').style.display = 'flex';
+    renderHistoryRecordList(0);
+    renderHistoryCompare(0);
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('historyModal').style.display = 'none';
+  }
+
+  function selectHistoryRecord(el, index) {
+    renderHistoryRecordList(index);
+    renderHistoryCompare(index);
+  }
+
+  function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+  }
+
+  document.getElementById('historyModal').addEventListener('click', function (e) {
+    if (e.target === this) closeHistoryModal();
+  });
+
+  function switchNav(el) {
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function switchTab(el, tab) {
+    document.querySelectorAll('.topbar-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function openDetail() {
+    document.getElementById('listPage').style.display = 'none';
+    document.getElementById('detailPage').style.display = 'block';
+    document.getElementById('detailPage').scrollTop = 0;
+  }
+
+  function closeDetail() {
+    document.getElementById('detailPage').style.display = 'none';
+    document.getElementById('listPage').style.display = 'block';
+  }
+
+  function selectRecommend(el) {
+    document.querySelectorAll('.recommend-item').forEach(item => item.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function openModal() {
+    document.getElementById('bindModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('bindModal').style.display = 'none';
+  }
+
+  function doBind() {
+    closeModal();
+    showToast();
+    setTimeout(() => closeDetail(), 1800);
+  }
+
+  function confirmBind() {
+    closeModal();
+    showToast();
+    setTimeout(() => closeDetail(), 1800);
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>存量房屋数据分析 - 大屏可视化</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg-dark: #0a0e27;
+    --bg-card: rgba(15, 23, 42, 0.8);
+    --border-glow: rgba(59, 130, 246, 0.3);
+    --primary: #3b82f6;
+    --primary-glow: rgba(59, 130, 246, 0.5);
+    --text-light: #e2e8f0;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-light);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* 大屏容器 */
+  .screen-container {
+    width: 100vw;
+    height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    position: relative;
+  }
+
+  /* 顶部标题栏 */
+  .screen-header {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  }
+
+  .header-title {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+
+  .header-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .header-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .filter-select {
+    padding: 8px 16px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--border-glow);
+    border-radius: 6px;
+    color: var(--text-light);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .filter-select:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--primary);
+  }
+
+  .header-time {
+    font-size: 16px;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+  }
+
+  /* 主体内容区 */
+  .screen-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 380px 1fr 380px;
+    grid-template-rows: 180px 1fr;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  /* 卡片通用样式 */
+  .screen-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+
+  .screen-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary-glow), transparent);
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(180deg, var(--primary), transparent);
+    border-radius: 2px;
+  }
+
+  /* KPI卡片区 */
+  .kpi-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 16px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .kpi-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+    transform: translateY(-2px);
+  }
+
+  .kpi-card.danger {
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  .kpi-card.danger:hover {
+    border-color: var(--danger);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .kpi-card.warning {
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+
+  .kpi-card.warning:hover {
+    border-color: var(--warning);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+
+  .kpi-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-light);
+    font-family: 'Arial', sans-serif;
+    line-height: 1;
+  }
+
+  .kpi-card.danger .kpi-value {
+    color: var(--danger);
+  }
+
+  .kpi-card.warning .kpi-value {
+    color: var(--warning);
+  }
+
+  .kpi-unit {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  /* 图表容器 */
+  .chart-container {
+    width: 100%;
+    height: calc(100% - 50px);
+  }
+
+  /* 左侧列 */
+  .col-left {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 中间列 - 地图 */
+  .col-center {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* 右侧列 */
+  .col-right {
+    grid-column: 3;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 地图容器 */
+  .map-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 地图标记点样式 */
+  .map-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--danger);
+    box-shadow: 0 0 10px var(--danger);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* 动画效果 */
+  @keyframes glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .glow-effect {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  /* 数据加载动画 */
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .pulse-animation {
+    animation: pulse 2s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="screen-container">
+  <!-- 顶部标题栏 -->
+  <div class="screen-header">
+    <div>
+      <div class="header-title">存量房屋数据分析</div>
+      <div class="header-subtitle">长沙市房屋安全管理平台 · 实时监控</div>
+    </div>
+    <div class="header-filters">
+      <select class="filter-select" id="yearFilter" onchange="updateData()">
+        <option value="">全部年份</option>
+        <option value="2026" selected>2026年</option>
+        <option value="2025">2025年</option>
+        <option value="2024">2024年</option>
+      </select>
+      <select class="filter-select" id="monthFilter" onchange="updateData()">
+        <option value="">全部月份</option>
+        <option value="1">1月</option>
+        <option value="2">2月</option>
+        <option value="3">3月</option>
+        <option value="4" selected>4月</option>
+        <option value="5">5月</option>
+        <option value="6">6月</option>
+        <option value="7">7月</option>
+        <option value="8">8月</option>
+        <option value="9">9月</option>
+        <option value="10">10月</option>
+        <option value="11">11月</option>
+        <option value="12">12月</option>
+      </select>
+      <div class="header-time" id="currentTime"></div>
+    </div>
+  </div>
+
+  <!-- 主体内容 -->
+  <div class="screen-body">
+    <!-- KPI卡片区 -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">房屋总数</div>
+        <div class="kpi-value">125,680<span class="kpi-unit">栋</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">项目（小区）数</div>
+        <div class="kpi-value">3,286<span class="kpi-unit">个</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">自建房总数</div>
+        <div class="kpi-value">12,580<span class="kpi-unit">栋</span></div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-label">危房总数</div>
+        <div class="kpi-value">1,842<span class="kpi-unit">栋</span></div>
+      </div>
+      <div class="kpi-card warning">
+        <div class="kpi-label">25年以上房屋</div>
+        <div class="kpi-value">8,642<span class="kpi-unit">栋</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">保护性建筑</div>
+        <div class="kpi-value">286<span class="kpi-unit">处</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" id="newHouseLabel">本月新增房屋</div>
+        <div class="kpi-value">850<span class="kpi-unit">栋</span></div>
+      </div>
+    </div>
+
+    <!-- 左侧列 -->
+    <div class="col-left">
+      <div class="screen-card" style="flex: 1;">
+        <div class="card-title">房屋用途分布 TOP5</div>
+        <div class="chart-container" id="chartStockType"></div>
+      </div>
+      <div class="screen-card" style="flex: 1;">
+        <div class="card-title">房屋年代分布占比</div>
+        <div class="chart-container" id="chartStockEra"></div>
+      </div>
+    </div>
+
+    <!-- 中间列 - 地图 -->
+    <div class="col-center">
+      <div class="screen-card" style="height: 100%;">
+        <div class="card-title">长沙市房屋分布地图</div>
+        <div class="map-container" id="mapContainer"></div>
+      </div>
+    </div>
+
+    <!-- 右侧列 -->
+    <div class="col-right">
+      <div class="screen-card" style="flex: 1;">
+        <div class="card-title">各区县自建房分布</div>
+        <div class="chart-container" id="chartBusinessDistrict"></div>
+      </div>
+      <div class="screen-card" style="flex: 1;">
+        <div class="card-title">自建房用途分析</div>
+        <div class="chart-container" id="chartBusinessType"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 更新时间
+  function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    document.getElementById('currentTime').textContent = timeStr;
+  }
+  updateTime();
+  setInterval(updateTime, 1000);
+
+  // 更新筛选
+  function updateData() {
+    const month = document.getElementById('monthFilter').value;
+    const label = document.getElementById('newHouseLabel');
+    if (label) {
+      label.textContent = (!month || month === '') ? '本年新增房屋' : '本月新增房屋';
+    }
+  }
+
+  // 图表通用配置
+  const chartTheme = {
+    textStyle: {
+      color: '#e2e8f0'
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      borderColor: 'rgba(59, 130, 246, 0.5)',
+      borderWidth: 1,
+      textStyle: { color: '#e2e8f0' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    }
+  };
+
+  // 初始化图表
+  function initCharts() {
+    // 房屋用途分布 TOP5
+    const chartType = echarts.init(document.getElementById('chartStockType'));
+    chartType.setOption({
+      ...chartTheme,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '30%', right: '4%', bottom: '3%', top: '3%' },
+      xAxis: {
+        type: 'value',
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.3)' } },
+        splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.1)' } },
+        axisLabel: { color: '#94a3b8' }
+      },
+      yAxis: {
+        type: 'category',
+        data: ['教育建筑', '商业建筑', '办公建筑', '住宅类建筑', '自建房建筑'],
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.3)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 12 }
+      },
+      series: [{
+        type: 'bar',
+        data: [6800, 5600, 4200, 45000, 42880],
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#3b82f6' },
+            { offset: 1, color: '#60a5fa' }
+          ]),
+          borderRadius: [0, 4, 4, 0]
+        },
+        label: {
+          show: true,
+          position: 'right',
+          color: '#e2e8f0',
+          fontSize: 12
+        }
+      }]
+    });
+
+    // 房屋年代分布占比
+    const chartEra = echarts.init(document.getElementById('chartStockEra'));
+    chartEra.setOption({
+      ...chartTheme,
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: {
+        orient: 'vertical',
+        right: '5%',
+        top: 'center',
+        textStyle: { color: '#94a3b8', fontSize: 11 },
+        itemWidth: 12,
+        itemHeight: 12
+      },
+      series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['35%', '50%'],
+        roseType: 'area',
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: 'rgba(10, 14, 39, 0.8)',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%',
+          color: '#e2e8f0',
+          fontSize: 10
+        },
+        data: [
+          { value: 28500, name: '1980年及以前', itemStyle: { color: '#ef4444' } },
+          { value: 18200, name: '1981-1990年', itemStyle: { color: '#f59e0b' } },
+          { value: 22100, name: '1991-2000年', itemStyle: { color: '#eab308' } },
+          { value: 25800, name: '2001-2010年', itemStyle: { color: '#3b82f6' } },
+          { value: 18600, name: '2011-2015年', itemStyle: { color: '#8b5cf6' } },
+          { value: 12480, name: '2016年至今', itemStyle: { color: '#10b981' } }
+        ]
+      }]
+    });
+
+    // 自建房用途分析
+    const chartBusiness = echarts.init(document.getElementById('chartBusinessType'));
+    chartBusiness.setOption({
+      ...chartTheme,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '28%', right: '4%', bottom: '3%', top: '3%' },
+      xAxis: {
+        type: 'value',
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.3)' } },
+        splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.1)' } },
+        axisLabel: { color: '#94a3b8' }
+      },
+      yAxis: {
+        type: 'category',
+        data: ['自住+经营', '经营', '自住'],
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.3)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 14 }
+      },
+      series: [{
+        type: 'bar',
+        data: [1849, 6065, 7495],
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#f59e0b' },
+            { offset: 1, color: '#fbbf24' }
+          ]),
+          borderRadius: [0, 4, 4, 0]
+        },
+        label: {
+          show: true,
+          position: 'right',
+          color: '#e2e8f0',
+          fontSize: 12
+        }
+      }]
+    });
+
+    // 各区县自建房分布
+    const chartDistrict = echarts.init(document.getElementById('chartBusinessDistrict'));
+    chartDistrict.setOption({
+      ...chartTheme,
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '3%', right: '4%', bottom: '18%', top: '3%', containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: ['湘江新区', '芙蓉区', '天心区', '开福区', '雨花区', '望城区', '长沙县', '浏阳市', '宁乡市'],
+        axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.3)' } },
+        axisLabel: { color: '#94a3b8', fontSize: 11, rotate: 35 }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.1)' } },
+        axisLabel: { color: '#94a3b8' }
+      },
+      series: [{
+        type: 'bar',
+        data: [3200, 2100, 1800, 1500, 1200, 800, 650, 580, 450],
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 1, 0, 0, [
+            { offset: 0, color: '#8b5cf6' },
+            { offset: 1, color: '#a78bfa' }
+          ]),
+          borderRadius: [4, 4, 0, 0]
+        },
+        label: {
+          show: true,
+          position: 'top',
+          color: '#e2e8f0',
+          fontSize: 11
+        }
+      }]
+    });
+
+    // 初始化地图
+    const mapChart = echarts.init(document.getElementById('mapContainer'));
+
+    // 长沙市各区县坐标数据（模拟）
+    const districtData = [
+      { name: '湘江新区', value: [112.88, 28.23, 3200], itemStyle: { color: '#ef4444' } },
+      { name: '芙蓉区', value: [113.03, 28.19, 2100], itemStyle: { color: '#f59e0b' } },
+      { name: '天心区', value: [112.99, 28.12, 1800], itemStyle: { color: '#eab308' } },
+      { name: '开福区', value: [112.99, 28.26, 1500], itemStyle: { color: '#3b82f6' } },
+      { name: '雨花区', value: [113.04, 28.13, 1200], itemStyle: { color: '#8b5cf6' } },
+      { name: '望城区', value: [112.82, 28.35, 800], itemStyle: { color: '#10b981' } },
+      { name: '长沙县', value: [113.08, 28.24, 650], itemStyle: { color: '#06b6d4' } },
+      { name: '浏阳市', value: [113.64, 28.16, 580], itemStyle: { color: '#ec4899' } },
+      { name: '宁乡市', value: [112.55, 28.25, 450], itemStyle: { color: '#f97316' } }
+    ];
+
+    // 注册长沙市地图（简化版GeoJSON）
+    echarts.registerMap('changsha', {
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', properties: { name: '湘江新区' }, geometry: { type: 'Polygon', coordinates: [[[112.75, 28.15], [112.75, 28.32], [112.95, 28.32], [112.95, 28.15], [112.75, 28.15]]] } },
+        { type: 'Feature', properties: { name: '芙蓉区' }, geometry: { type: 'Polygon', coordinates: [[[112.98, 28.15], [112.98, 28.24], [113.08, 28.24], [113.08, 28.15], [112.98, 28.15]]] } },
+        { type: 'Feature', properties: { name: '天心区' }, geometry: { type: 'Polygon', coordinates: [[[112.95, 28.08], [112.95, 28.15], [113.05, 28.15], [113.05, 28.08], [112.95, 28.08]]] } },
+        { type: 'Feature', properties: { name: '开福区' }, geometry: { type: 'Polygon', coordinates: [[[112.95, 28.24], [112.95, 28.32], [113.05, 28.32], [113.05, 28.24], [112.95, 28.24]]] } },
+        { type: 'Feature', properties: { name: '雨花区' }, geometry: { type: 'Polygon', coordinates: [[[113.00, 28.08], [113.00, 28.18], [113.10, 28.18], [113.10, 28.08], [113.00, 28.08]]] } },
+        { type: 'Feature', properties: { name: '望城区' }, geometry: { type: 'Polygon', coordinates: [[[112.70, 28.30], [112.70, 28.42], [112.88, 28.42], [112.88, 28.30], [112.70, 28.30]]] } },
+        { type: 'Feature', properties: { name: '长沙县' }, geometry: { type: 'Polygon', coordinates: [[[113.05, 28.18], [113.05, 28.32], [113.20, 28.32], [113.20, 28.18], [113.05, 28.18]]] } },
+        { type: 'Feature', properties: { name: '浏阳市' }, geometry: { type: 'Polygon', coordinates: [[[113.50, 28.08], [113.50, 28.28], [113.78, 28.28], [113.78, 28.08], [113.50, 28.08]]] } },
+        { type: 'Feature', properties: { name: '宁乡市' }, geometry: { type: 'Polygon', coordinates: [[[112.35, 28.18], [112.35, 28.35], [112.65, 28.35], [112.65, 28.18], [112.35, 28.18]]] } }
+      ]
+    });
+
+    mapChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        formatter: function(params) {
+          if (params.componentSubType === 'scatter') {
+            return params.name + '<br/>自建房数量: ' + params.value[2] + ' 栋';
+          }
+          return params.name;
+        },
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        borderColor: 'rgba(59, 130, 246, 0.5)',
+        borderWidth: 1,
+        textStyle: { color: '#e2e8f0' }
+      },
+      geo: {
+        map: 'changsha',
+        roam: true,
+        center: [112.94, 28.23],
+        zoom: 1.2,
+        itemStyle: {
+          areaColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: 'rgba(59, 130, 246, 0.5)',
+          borderWidth: 1
+        },
+        emphasis: {
+          itemStyle: {
+            areaColor: 'rgba(59, 130, 246, 0.3)',
+            borderColor: '#3b82f6',
+            borderWidth: 2
+          },
+          label: {
+            show: true,
+            color: '#e2e8f0',
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        label: {
+          show: true,
+          color: '#94a3b8',
+          fontSize: 11
+        }
+      },
+      series: [
+        {
+          type: 'scatter',
+          coordinateSystem: 'geo',
+          data: districtData,
+          symbolSize: function(val) {
+            return Math.max(val[2] / 100, 8);
+          },
+          label: {
+            show: false
+          },
+          emphasis: {
+            label: {
+              show: true,
+              formatter: '{b}',
+              position: 'top',
+              color: '#e2e8f0',
+              fontSize: 12
+            }
+          }
+        },
+        {
+          type: 'effectScatter',
+          coordinateSystem: 'geo',
+          data: districtData.filter(d => d.value[2] > 1500),
+          symbolSize: function(val) {
+            return Math.max(val[2] / 80, 12);
+          },
+          showEffectOn: 'render',
+          rippleEffect: {
+            brushType: 'stroke',
+            scale: 3,
+            period: 4
+          },
+          label: {
+            show: false
+          },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(239, 68, 68, 0.5)'
+          }
+        }
+      ]
+    });
+
+    // 响应式调整
+    window.addEventListener('resize', () => {
+      chartType.resize();
+      chartEra.resize();
+      chartBusiness.resize();
+      chartDistrict.resize();
+      mapChart.resize();
+    });
+  }
+
+  // 页面加载完成后初始化
+  window.onload = function() {
+    initCharts();
+  };
+</script>
+
+</body>
+</html>

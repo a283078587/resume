@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>房屋安全管理信息系统 - 数据分析</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="../_shared/js/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -229,7 +228,7 @@
         .sidebar {
             position: fixed;
             top: 56px; left: 0; bottom: 0;
-            width: 200px;
+            width: 240px;
             background: var(--bg-white);
             overflow-y: auto;
             z-index: 100;
@@ -259,6 +258,17 @@
             text-decoration: none;
             position: relative;
             font-weight: 400;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-item .label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .sidebar-item:hover {
@@ -310,7 +320,7 @@
 
         /* ===== MAIN CONTENT ===== */
         .main-content {
-            margin-left: 200px;
+            margin-left: 240px;
             margin-top: 56px;
             padding: 20px 24px;
             min-height: calc(100vh - 56px);
@@ -1678,7 +1688,7 @@
 <div class="sidebar">
     <div class="sidebar-section-title">首页</div>
     <div class="sidebar-item active" onclick="switchView('home')">
-        <span class="icon">&#127968;</span>首页概览<span class="arrow">&#8250;</span>
+        <span class="icon">&#127968;</span><span class="label">首页概览</span><span class="arrow">&#8250;</span>
     </div>
 
     <div class="sidebar-section-title">
@@ -1686,16 +1696,16 @@
         <span class="favorite-btn" title="收藏">&#9734;</span>
     </div>
     <div class="sidebar-item" onclick="switchView('stock')">
-        <span class="icon">&#128200;</span>存量房屋情况分析<span class="arrow">&#8250;</span>
+        <span class="icon">&#128200;</span><span class="label">存量房屋情况分析</span><span class="arrow">&#8250;</span>
     </div>
     <div class="sidebar-item" onclick="switchView('danger')">
-        <span class="icon">&#127968;</span>危旧房分析<span class="arrow">&#8250;</span>
+        <span class="icon">&#127968;</span><span class="label">危旧房分析</span><span class="arrow">&#8250;</span>
     </div>
     <div class="sidebar-item" onclick="switchView('appraisal')">
-        <span class="icon">&#128196;</span>安全鉴定分析<span class="arrow">&#8250;</span>
+        <span class="icon">&#128196;</span><span class="label">安全鉴定分析</span><span class="arrow">&#8250;</span>
     </div>
     <div class="sidebar-item" onclick="switchView('inspection')">
-        <span class="icon">&#127973;</span>巡检体检整治分析<span class="arrow">&#8250;</span>
+        <span class="icon">&#127973;</span><span class="label">巡检体检整治分析</span><span class="arrow">&#8250;</span>
     </div>
 </div>
 
@@ -4193,122 +4203,6 @@
             yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#eee' } }, axisLabel: { color: '#666' } },
             series: [
                 { name: '自建房数量', type: 'bar', barWidth: '50%', itemStyle: { borderRadius: [4, 4, 0, 0], color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#136FFB' }, { offset: 1, color: '#C5DDFF' }]) }, label: { show: true, position: 'top', fontSize: 9, color: '#666' }, data: [3268, 2186, 1862, 1580, 1986, 1280, 986, 856, 680] }
-            ]
-        });
-
-        // ===== 危旧房模块 =====
-        var chartDangerTrend = echarts.getInstanceByDom(document.getElementById('chartDangerTrend'));
-        if (chartDangerTrend) chartDangerTrend.dispose();
-        chartDangerTrend = echarts.init(document.getElementById('chartDangerTrend'));
-        chartDangerTrend.setOption({
-            color: ['#F56C6C'],
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-            xAxis: { type: 'category', data: ['2020', '2021', '2022', '2023', '2024', '2025'] },
-            yAxis: { type: 'value', name: '危房数量（栋）' },
-            series: [{
-                name: '危房数量',
-                type: 'line',
-                smooth: true,
-                data: [856, 742, 698, 623, 518, 456]
-            }]
-        });
-
-        var chartDangerRegion = echarts.getInstanceByDom(document.getElementById('chartDangerRegion'));
-        if (chartDangerRegion) chartDangerRegion.dispose();
-        chartDangerRegion = echarts.init(document.getElementById('chartDangerRegion'));
-        chartDangerRegion.setOption({
-            color: ['#E6A23C'],
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-            xAxis: { type: 'category', data: ['上城区', '下城区', '西湖区', '拱墅区', '江干区', '滨江区'] },
-            yAxis: { type: 'value' },
-            series: [{ name: '数量', type: 'bar', data: [89, 76, 112, 65, 58, 56] }]
-        });
-
-        var chartDangerType = echarts.getInstanceByDom(document.getElementById('chartDangerType'));
-        if (chartDangerType) chartDangerType.dispose();
-        chartDangerType = echarts.init(document.getElementById('chartDangerType'));
-        chartDangerType.setOption({
-            color: ['#F56C6C', '#E6A23C', '#136FFB', '#67C23A'],
-            tooltip: { trigger: 'item' },
-            legend: { bottom: 0, left: 'center' },
-            series: [{
-                type: 'pie',
-                radius: '60%',
-                data: [
-                    { value: 189, name: '违规装修或改造检查' },
-                    { value: 267, name: '屋面荷载检查' },
-                    { value: 86, name: '地基基础异常检查' },
-                    { value: 124, name: '上部承重结构异常检查' },
-                    { value: 65, name: '围护系统异常检查' }
-                ]
-            }]
-        });
-
-        // ===== 危旧房新增图表 =====
-        var chartDangerProgress = echarts.getInstanceByDom(document.getElementById('chartDangerProgress'));
-        if (chartDangerProgress) chartDangerProgress.dispose();
-        chartDangerProgress = echarts.init(document.getElementById('chartDangerProgress'));
-        chartDangerProgress.setOption({
-            color: ['#67C23A', '#E6A23C', '#136FFB', '#909399'],
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
-            xAxis: { type: 'category', data: ['已整治完成', '整治实施中', '整治计划中', '暂未启动'] },
-            yAxis: { type: 'value' },
-            series: [{ name: '数量', type: 'bar', data: [682, 386, 245, 156], label: { show: true, position: 'top', fontSize: 10 } }]
-        });
-
-        var chartDangerRisk = echarts.getInstanceByDom(document.getElementById('chartDangerRisk'));
-        if (chartDangerRisk) chartDangerRisk.dispose();
-        chartDangerRisk = echarts.init(document.getElementById('chartDangerRisk'));
-        chartDangerRisk.setOption({
-            color: ['#F56C6C', '#E6A23C', '#FFC107'],
-            tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-            legend: { bottom: 0, left: 'center' },
-            series: [{
-                type: 'pie',
-                radius: ['35%', '60%'],
-                data: [
-                    { value: 86, name: '红色预警' },
-                    { value: 245, name: '橙色预警' },
-                    { value: 532, name: '黄色预警' }
-                ]
-            }]
-        });
-
-        // ===== 老旧危房预警 & 隐患趋势图表 =====
-        var chartDangerFocus = echarts.getInstanceByDom(document.getElementById('chartDangerFocus'));
-        if (chartDangerFocus) chartDangerFocus.dispose();
-        chartDangerFocus = echarts.init(document.getElementById('chartDangerFocus'));
-        chartDangerFocus.setOption({
-            color: ['#F56C6C', '#E6A23C', '#FFC107'],
-            tooltip: { trigger: 'axis', backgroundColor: 'rgba(20, 27, 68, 0.95)', borderColor: 'rgba(79, 195, 247, 0.3)', textStyle: { color: '#fff' } },
-            grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-            xAxis: { type: 'category', data: ['湘江新区', '芙蓉区', '天心区', '开福区', '雨花区', '望城区', '长沙县', '浏阳市', '宁乡市'] },
-            yAxis: { type: 'value', name: '高风险' },
-            series: [
-                { name: '80年代前', type: 'bar', stack: '老旧', data: [86, 62, 58, 52, 48, 38, 32, 28, 22] },
-                { name: 'D级危房', type: 'bar', stack: '老旧', data: [42, 28, 25, 22, 18, 15, 12, 10, 8] }
-            ]
-        });
-
-        var chartDangerTypeTrend = echarts.getInstanceByDom(document.getElementById('chartDangerTypeTrend'));
-        if (chartDangerTypeTrend) chartDangerTypeTrend.dispose();
-        chartDangerTypeTrend = echarts.init(document.getElementById('chartDangerTypeTrend'));
-        chartDangerTypeTrend.setOption({
-            color: ['#F56C6C', '#E6A23C', '#136FFB', '#67C23A', '#909399'],
-            tooltip: { trigger: 'axis', backgroundColor: 'rgba(20, 27, 68, 0.95)', borderColor: 'rgba(79, 195, 247, 0.3)', textStyle: { color: '#fff' } },
-            legend: { bottom: 0, textStyle: { color: '#666', fontSize: 10 } },
-            grid: { left: '3%', right: '4%', bottom: '18%', top: '10%', containLabel: true },
-            xAxis: { type: 'category', data: ['2022', '2023', '2024', '2025', '2026'] },
-            yAxis: { type: 'value', name: '发现数量' },
-            series: [
-                { name: '违规装修', type: 'line', smooth: true, data: [128, 142, 168, 185, 189] },
-                { name: '屋面荷载', type: 'line', smooth: true, data: [86, 92, 108, 125, 135] },
-                { name: '地基异常', type: 'line', smooth: true, data: [52, 58, 65, 72, 78] },
-                { name: '承重结构', type: 'line', smooth: true, data: [68, 75, 82, 95, 102] },
-                { name: '围护系统', type: 'line', smooth: true, data: [42, 48, 55, 62, 68] }
             ]
         });
 

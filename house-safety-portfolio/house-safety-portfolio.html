@@ -180,6 +180,9 @@
       transform: scale(0.5); transform-origin: 0 0;
       pointer-events: none;
     }
+    .demo-preview img {
+      width: 100%; height: 100%; object-fit: cover; cursor: pointer;
+    }
     .demo-info { padding: 1rem; }
     .demo-info h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem; }
     .demo-info p { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; }
@@ -191,6 +194,9 @@
     .demo-info .demo-tag.biz { background: #fef3c7; color: #d97706; }
     .demo-info .demo-tag.analysis { background: #ccfbf1; color: var(--accent2); }
     .demo-info .demo-tag.axure { background: #f3e8ff; color: #7c3aed; }
+    .demo-info .demo-tag.pc { background: #dbeafe; color: #2563eb; }
+    .demo-info .demo-tag.mobile { background: #fce7f3; color: #db2777; }
+    .demo-info .demo-tag.spec { background: #fef3c7; color: #b45309; }
 
     /* Axure 4-column grid */
     .demo-grid-axure { grid-template-columns: repeat(4, 1fr); }
@@ -229,6 +235,18 @@
     }
     .overlay-close:hover { background: rgba(255,255,255,0.3); }
     .overlay-frame { flex: 1; width: 100%; border: none; }
+
+    /* Image lightbox */
+    .img-lightbox {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.9); z-index: 9999; cursor: zoom-out;
+      align-items: center; justify-content: center;
+    }
+    .img-lightbox.active { display: flex; }
+    .img-lightbox img {
+      max-width: 95vw; max-height: 95vh; object-fit: contain;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
 
     /* ---- Responsive ---- */
     @media (max-width: 768px) {
@@ -453,50 +471,61 @@
 
     <!-- ===== Part B: Manual Axure ===== -->
     <h3 class="proto-section-title">手动绘制原型 (Axure RP)</h3>
-    <p class="proto-section-desc">从 110+ 页 Axure 原型中选取最具代表性的典型界面，涵盖 PC 端数据工作台、建筑档案管理、隐患管理以及移动端巡检等核心场景。</p>
+    <p class="proto-section-desc">从 110+ 页 Axure 原型中选取最具代表性的典型界面截图，涵盖建筑详情、户室图、巡检流程、体检详情、业务规则汇总等核心场景。点击图片可查看全图。</p>
     <div class="demo-grid demo-grid-axure">
       <div class="demo-card">
         <div class="demo-preview">
-          <iframe src="assets/axure-pages/axure-dashboard.html" loading="lazy" title="个人工作台"></iframe>
+          <img src="assets/img-rules.png" alt="部分原型规范文件" onclick="openImage('assets/img-rules.png')" title="点击查看全图">
         </div>
         <div class="demo-info">
-          <span class="demo-tag axure">Axure RP</span>
-          <h4>个人工作台（PC 端）</h4>
-          <p>政务角色首页，包含安全巡查统计、模块快捷入口、重点数据看板，展示 PC 端工作台的信息架构设计</p>
-          <button class="demo-btn" onclick="openDemo('assets/axure-pages/axure-dashboard.html', '个人工作台（PC 端）')">全屏查看 →</button>
+          <span class="demo-tag spec">规范文件</span>
+          <h4>部分原型规范文件</h4>
+          <p>系统业务规则梳理文档，涵盖各模块的状态流转规则、校验逻辑和操作约束，体现复杂 B 端系统的业务梳理功底</p>
+          <button class="demo-btn" onclick="openImage('assets/img-rules.png')">查看全图 →</button>
         </div>
       </div>
       <div class="demo-card">
         <div class="demo-preview">
-          <iframe src="assets/axure-pages/axure-building.html" loading="lazy" title="建筑信息列表"></iframe>
+          <img src="assets/img-building-detail.png" alt="建筑详情-基础信息" onclick="openImage('assets/img-building-detail.png')" title="点击查看全图">
         </div>
         <div class="demo-info">
-          <span class="demo-tag axure">Axure RP</span>
-          <h4>建筑信息列表（PC 端）</h4>
-          <p>项目→建筑→户室三级档案层级，展示列表筛选、批量操作、详情跳转等复杂 B 端列表页设计</p>
-          <button class="demo-btn" onclick="openDemo('assets/axure-pages/axure-building.html', '建筑信息列表（PC 端）')">全屏查看 →</button>
+          <span class="demo-tag pc">PC端</span>
+          <h4>建筑详情 - 基础信息</h4>
+          <p>建筑档案核心页面，展示项目→建筑→户室三级档案中的建筑层级详情，包含基础信息、结构信息等完整字段</p>
+          <button class="demo-btn" onclick="openImage('assets/img-building-detail.png')">查看全图 →</button>
         </div>
       </div>
       <div class="demo-card">
         <div class="demo-preview">
-          <iframe src="assets/axure-pages/axure-hazard.html" loading="lazy" title="隐患列表"></iframe>
+          <img src="assets/img-room.png" alt="户室图" onclick="openImage('assets/img-room.png')" title="点击查看全图">
         </div>
         <div class="demo-info">
-          <span class="demo-tag axure">Axure RP</span>
-          <h4>隐患列表（PC 端）</h4>
-          <p>隐患汇总管理页面，展示状态筛选、隐患详情、关联整治等核心业务操作，体现状态机设计思路</p>
-          <button class="demo-btn" onclick="openDemo('assets/axure-pages/axure-hazard.html', '隐患列表（PC 端）')">全屏查看 →</button>
+          <span class="demo-tag pc">PC端</span>
+          <h4>户室图</h4>
+          <p>房屋档案最细粒度——户室层级，以可视化方式展示户室分布和关联信息，体现"一房一档"的设计理念</p>
+          <button class="demo-btn" onclick="openImage('assets/img-room.png')">查看全图 →</button>
         </div>
       </div>
       <div class="demo-card">
         <div class="demo-preview">
-          <iframe src="assets/axure-pages/axure-mobile.html" loading="lazy" title="移动端"></iframe>
+          <img src="assets/img-inspection.png" alt="去巡检_继续巡检" onclick="openImage('assets/img-inspection.png')" title="点击查看全图">
         </div>
         <div class="demo-info">
-          <span class="demo-tag axure">Axure RP</span>
-          <h4>移动端综合页面</h4>
-          <p>面向一线巡查人员的移动端设计，包含扫码、快速巡检、离线操作等移动端特有的交互方式</p>
-          <button class="demo-btn" onclick="openDemo('assets/axure-pages/axure-mobile.html', '移动端综合页面')">全屏查看 →</button>
+          <span class="demo-tag mobile">移动端</span>
+          <h4>去巡检 / 继续巡检</h4>
+          <p>移动端巡检核心操作页面，展示一线巡查人员扫码巡检、填写检查结果、拍照上传等完整巡检流程</p>
+          <button class="demo-btn" onclick="openImage('assets/img-inspection.png')">查看全图 →</button>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-preview">
+          <img src="assets/img-health-check.png" alt="体检详情" onclick="openImage('assets/img-health-check.png')" title="点击查看全图">
+        </div>
+        <div class="demo-info">
+          <span class="demo-tag pc">PC端</span>
+          <h4>体检详情</h4>
+          <p>房屋体检结果详情页，展示体检任务信息、检查项目、体检结论等关键数据，串联体检→隐患→整治业务闭环</p>
+          <button class="demo-btn" onclick="openImage('assets/img-health-check.png')">查看全图 →</button>
         </div>
       </div>
     </div>
@@ -512,6 +541,11 @@
   <iframe class="overlay-frame" id="overlayFrame" src="" title="原型全屏预览"></iframe>
 </div>
 
+<!-- Image Lightbox -->
+<div class="img-lightbox" id="imgLightbox" onclick="closeImage()">
+  <img src="" alt="全图预览" id="lightboxImg">
+</div>
+
 <script>
 function openDemo(url, title) {
   document.getElementById('overlayTitle').textContent = title;
@@ -525,8 +559,18 @@ function closeDemo() {
   document.body.style.overflow = '';
 }
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeDemo(); }
+  if (e.key === 'Escape') { closeDemo(); closeImage(); }
 });
+
+function openImage(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('imgLightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeImage() {
+  document.getElementById('imgLightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
 </script>
 
 <!-- ====== TECH & DATA ====== -->
